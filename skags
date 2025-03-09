@@ -1,0 +1,65 @@
+i recently implemented Single Keyword Ad Groups (SKAGs) strategy for one of clients using a Google Ads script.
+SKAGs means each ad group contains only one keyword (usually in exact or phrase match). the performance indicated SKAGs bring a lot traffic with lower cost 
+because :
+1. Improved Ad Relevance
+Since each ad group contains only one specific keyword, you can create highly relevant ad copy that matches the user's search query exactly.
+This increases Quality Score, leading to lower CPC (Cost-Per-Click) and better performance
+
+2. Higher Click-Through Rate and lower CPC
+Since the search query and ad text match more closely, users are more likely to click your ad.
+Google Ads often bolds matching keywords in search results, making them stand out more.
+
+however it required a lot management resources to monitor and control. so wrote a google script to automate it. 
+here's part of core code:
+
+function main() {
+  // Replace with your target campaign name or use AdsApp.campaigns().get() to loop over all campaigns.
+  var campaignName = "Campaign Name";
+  var campaignIterator = AdsApp.campaigns()
+    .withCondition("Name = '" + campaignName + "'")
+    .get();
+    
+  if (campaignIterator.hasNext()) {
+    var campaign = campaignIterator.next();
+    
+    // List of keywords for which to create SKAGs
+    var keywords = ["keyword1", "keyword2", "keyword3"];
+    
+    // Loop through each keyword and create a SKAG
+    for (var i = 0; i < keywords.length; i++) {
+      var keyword = keywords[i];
+      
+      // Create a new ad group named after the keyword
+      var adGroupName = keyword + " SKAG";
+      var adGroupOperation = campaign.newAdGroupBuilder()
+        .withName(adGroupName)
+        .withCpc(1.00)  // Set your default CPC bid
+        .build();
+        
+      var adGroup = adGroupOperation.getResult();
+      
+      // Add the keyword as an exact match
+      adGroup.createKeyword("[" + keyword + "]");
+      
+      // Optionally, add negative keywords to prevent overlap
+      // For example, if you want to add all other keywords as negatives
+      for (var j = 0; j < keywords.length; j++) {
+        if (j !== i) {
+          adGroup.createNegativeKeyword("[" + keywords[j] + "]");
+        }
+      }
+      
+      // Optionally, create ads within the ad group that are tailored to the keyword
+      // Example: create a text ad
+      adGroup.newAd()
+        .expandedTextAdBuilder()
+        .withHeadlinePart1("Buy " + keyword + " Now")
+        .withHeadlinePart2("Best Deals Available")
+        .withDescription("Find the best " + keyword + " deals online.")
+        .withFinalUrl("http://www.example.com")
+        .build();
+    }
+  } else {
+    Logger.log("Campaign not found: " + campaignName);
+  }
+}
